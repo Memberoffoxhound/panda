@@ -543,7 +543,9 @@ class Panda:
       "sbu2_voltage_mV": a[23],
       "som_reset_triggered": a[24],
       "sound_output_level": a[25],
-      "temperature": a[26],
+      "controls_allowed_lateral": a[26] & 1,
+      "controls_allowed_longitudinal": (a[26] >> 1) & 1,
+      "temperature": a[27],
     }
 
   @ensure_health_packet_version
@@ -761,8 +763,8 @@ class Panda:
       ret += self._handle.bulkWrite(2, struct.pack("B", port_number) + ln[i:i + 0x20])
     return ret
 
-  def send_heartbeat(self, engaged=True):
-    self._handle.controlWrite(Panda.REQUEST_OUT, 0xf3, engaged, 0, b'')
+  def send_heartbeat(self, engaged=True, engaged_mads=True):
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xf3, engaged, engaged_mads, b'')
 
   # disable heartbeat checks for use outside of openpilot
   # sending a heartbeat will reenable the checks
