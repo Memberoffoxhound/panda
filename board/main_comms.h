@@ -26,6 +26,7 @@ static int get_health_pkt(void *dat) {
   health->flags_pkt |= safety.safety_rx_checks_invalid ? HEALTH_FLAG_SAFETY_RX_CHECKS_INVALID : 0U;
   health->flags_pkt |= bootkick_reset_triggered ? HEALTH_FLAG_SOM_RESET_TRIGGERED : 0U;
   health->flags_pkt |= heartbeat_disabled ? HEALTH_FLAG_HEARTBEAT_DISABLED : 0U;
+  health->flags_pkt |= safety_controls_allowed_lateral() ? HEALTH_FLAG_CONTROLS_ALLOWED_LATERAL : 0U;
   health->flags_pkt |= reset_flags;
 
   health->safety_tx_blocked_pkt = safety_tx_blocked;
@@ -255,6 +256,8 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       // you can only set this if you are in a non car safety mode
       if (!is_car_safety_mode(safety_setup.current_safety_mode)) {
         mpu_safety_open();
+        // MADS car flags and lateral heartbeat in param2, ported from sunnypilot, see LICENSE.sunnypilot
+        safety_param_sp(req->param2);
         safety_alternative_experience(req->param1);
         mpu_safety_close();
       }
@@ -386,6 +389,7 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
         heartbeat_disabled = false;
         mpu_safety_open();
         safety_heartbeat(req->param1 == 1U);
+        safety_heartbeat_mads(req->param2 == 1U);
         mpu_safety_close();
         break;
       }
